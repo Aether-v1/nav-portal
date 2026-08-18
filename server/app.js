@@ -32,7 +32,7 @@ app.use((req, res, next) => {
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://client.crisp.chat",
+      "script-src 'self' https://client.crisp.chat",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
@@ -43,6 +43,12 @@ app.use((req, res, next) => {
       "base-uri 'self'"
     ].join('; ')
   );
+  next();
+});
+
+// ─── API 不缓存 ───────────────────────────────────────────────
+app.use('/api/', (req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
   next();
 });
 
@@ -166,6 +172,7 @@ function parseLinkId(raw) {
 function getEnabledLink(id) {
   const link = config.links[String(id)];
   if (!link || !link.enabled || !link.url) return null;
+  if (!isSafeRedirectUrl(link.url)) return null;
   return link;
 }
 
@@ -182,6 +189,7 @@ const BLOCKED_HOSTS = new Set([
 ]);
 
 function isPrivateIp(ip) {
+  // IPv4
   const v4 = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (v4) {
     const [, a, b] = v4.map(Number);
@@ -192,8 +200,20 @@ function isPrivateIp(ip) {
     if (a === 169 && b === 254) return true;
     if (a === 0) return true;
   }
-  if (ip === '::1' || ip.startsWith('fc') || ip.startsWith('fd') || ip.startsWith('fe80')) {
-    return true;
+  // IPv6 (without brackets)
+  if (ip === '::1') return true;
+  if (ip.startsWith('fc') || ip.startsWith('fd')) return true; // fc00::/7
+  if (ip.startsWith('fe80')) return true; // fe80::/10
+  // IPv4-mapped IPv6: ::ffff:x.x.x.x
+  const v4mapped = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
+  if (v4mapped) return isPrivateIp(v4mapped[1]);
+  // IPv4-mapped IPv6 hex: ::ffff:7f00:1
+  const v4mappedHex = ip.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i);
+  if (v4mappedHex) {
+    const high = parseInt(v4mappedHex[1], 16);
+    const a = high >> 8;
+    const b = high & 0xff;
+    if (a === 127 || a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254) || a === 0) return true;
   }
   return false;
 }
@@ -202,11 +222,28 @@ function isSafeUrl(targetUrl) {
   try {
     const parsed = new URL(targetUrl);
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
-    const hostname = parsed.hostname.toLowerCase();
+    let hostname = parsed.hostname.toLowerCase();
+    // 去掉 IPv6 括号
+    if (hostname.startsWith('[') && hostname.endsWith(']')) {
+      hostname = hostname.slice(1, -1);
+    }
     if (BLOCKED_HOSTS.has(hostname)) return false;
-    const ipMatch = hostname.match(/^(\d{1,3}\.){3}\d{1,3}$/);
-    if (ipMatch && isPrivateIp(hostname)) return false;
+    // IPv4 字面量
+    if (/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname)) {
+      if (isPrivateIp(hostname)) return false;
+    }
+    // IPv6 字面量（含冒号）
+    if (hostname.includes(':') && isPrivateIp(hostname)) return false;
     return true;
+  } catch {
+    return false;
+  }
+}
+
+function isSafeRedirectUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
   } catch {
     return false;
   }
@@ -235,8 +272,8 @@ function serverPing(targetUrl, timeout) {
       req.destroy();
       resolve({ ok: false, delay: null, error: 'timeout' });
     });
-    req.on('error', () => {
-      resolve({ ok: false, delay: null, error: 'network_error' });
+    req.on('error', (err) => {
+      resolve({ ok: false, delay: null, error: err.code || 'network_error' });
     });
   });
 }
