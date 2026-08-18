@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Environment variables (production config)
+.env
+
+# Logs
+logs/
+*.log
+
+# SSL / ACME challenge
+.well-known/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>导航页</title>
+    <meta
+      name="description"
+      content="稳定、安全、快速的网络访问入口导航页"
+    />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/css/style.css?v=16" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="tech-bg" aria-hidden="true">
+        <div class="tech-grid"></div>
+        <div class="tech-scan"></div>
+        <div class="tech-glow glow-a"></div>
+        <div class="tech-glow glow-b"></div>
+        <div class="tech-glow glow-c"></div>
+
+        <span class="network-node node-1"></span>
+        <span class="network-node node-2"></span>
+        <span class="network-node node-3"></span>
+        <span class="network-node node-4"></span>
+        <span class="network-node node-5"></span>
+        <span class="network-node node-6"></span>
+
+        <span class="network-line line-1"></span>
+        <span class="network-line line-2"></span>
+        <span class="network-line line-3"></span>
+        <span class="network-line line-4"></span>
+      </div>
+
+      <main class="portal-wrap">
+        <section class="hero-panel hero-panel-single">
+          <div class="hero-left">
+            <div class="brand-row brand-row-center">
+              <div class="brand-logo-wrap brand-logo-image-wrap">
+
+              </div>
+
+              <div class="brand-copy brand-copy-center">
+                <div class="brand-tag">SECURE NETWORK ACCESS</div>
+                <h1 id="siteName">加载中...</h1>
+                <p id="siteSubtitle" class="site-subtitle"></p>
+              </div>
+            </div>
+
+            <div class="hero-notice hero-notice-center">
+              <div class="notice-label">系统公告</div>
+              <div class="notice-content" id="siteNotice">
+                正在获取最新公告内容...
+              </div>
+            </div>
+
+            <div class="hero-actions hero-actions-center">
+              <button class="main-action-button" type="button" id="heroButton">
+                example.com
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-grid">
+          <div class="main-stack">
+            <section class="panel panel-links">
+              <div class="panel-head">
+                <div>
+                  <div class="panel-kicker">ACCESS ENTRY</div>
+                  <h2 class="panel-title">线路入口</h2>
+                </div>
+                <button
+                  class="panel-badge panel-badge-button"
+                  type="button"
+                  id="refreshDelayButton"
+                >
+                  点击刷新延迟
+                </button>
+              </div>
+
+              <div class="links-grid" id="linksGrid"></div>
+            </section>
+
+            <section class="panel panel-tg-single">
+              <div class="panel-head compact panel-head-center">
+                <div>
+                  <div class="panel-kicker">OFFICIAL GROUP</div>
+                  <h2 class="panel-title panel-title-center">官方TG群组</h2>
+                </div>
+              </div>
+
+              <div class="entry-tg-wrap tg-single-wrap">
+                <a
+                  class="sub-action-button entry-tg-button tg-single-button"
+                  id="tgButton"
+                  href="#"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  点击加入
+                </a>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <footer class="site-footer">
+          <div class="footer-line"></div>
+          <div class="footer-text">
+            <span>© <span id="footerYear"></span> Secure Access Portal</span>
+            <span class="footer-divider">|</span>
+            <span>入口导航 / 稳定访问 / 实时延迟</span>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <script>
+      (function () {
+        var yearEl = document.getElementById('footerYear');
+        if (yearEl) {
+          yearEl.textContent = new Date().getFullYear();
+        }
+      })();
+    </script>
+    <!-- Crisp 客服脚本：请在部署时替换为自己的 WEBSITE_ID
+    <script type="text/javascript">window.$crisp=[];window.CRISP_WEBSITE_ID="your-website-id";(function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();</script>
+    -->
+    <script src="/js/index.js?v=16"></script>
+  </body>
+</html>

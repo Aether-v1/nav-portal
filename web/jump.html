@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>安全连接中</title>
+	<link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <div class="page jump-page">
+      <main class="jump-wrap">
+        <section class="jump-card">
+          <div class="spinner"></div>
+          <div class="jump-title" id="jumpTitle">正在建立安全连接</div>
+          <div class="jump-name" id="jumpName"></div>
+          <div class="jump-message" id="jumpMessage">请稍候...</div>
+          <div class="jump-countdown">系统将在 <span id="countdown">5</span> 秒内完成自动跳转...</div>
+          <div class="jump-footer" id="jumpFooter"></div>
+          <button class="skip-button" id="skipButton" type="button">立即进入</button>
+        </section>
+      </main>
+    </div>
+
+    <script src="/js/jump.js"></script>
+  </body>
+</html>
