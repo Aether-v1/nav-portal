@@ -32,8 +32,8 @@ app.use((req, res, next) => {
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      "script-src 'self' https://client.crisp.chat",
-      "style-src 'self' 'unsafe-inline'",
+      "script-src 'self' https://client.crisp.chat https://static.cloudflareinsights.com",
+      "style-src 'self' 'unsafe-inline' https://client.crisp.chat",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
       "connect-src 'self' https://client.crisp.chat wss://client.crisp.chat",
