@@ -496,6 +496,25 @@ select {
   line-height: 1.25;
   color: var(--text-main);
   text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.link-badge {
+  display: inline-block;
+  margin: 0 auto 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #06121f;
+  background: linear-gradient(90deg, #79dfff, #8ab0ff);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .link-delay {
@@ -509,8 +528,13 @@ select {
   text-align: center;
 }
 
+.delay-excellent {
+  color: var(--green);
+}
+
 .delay-good {
   color: var(--green);
+  opacity: 0.9;
 }
 
 .delay-normal {
@@ -620,6 +644,10 @@ select {
   to {
     transform: translateY(36px);
   }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 1280px) {
@@ -803,5 +831,145 @@ select {
     padding-top: 10px;
     font-size: 11px;
     line-height: 1.6;
+  }
+}
+
+/* ─── 减少动画偏好 ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .tech-scan,
+  .network-node,
+  .tech-grid {
+    animation: none !important;
+  }
+}
+
+/* ─── 移动端安全区域 ───────────────────────────── */
+@supports (padding: max(0px)) {
+  .portal-wrap {
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+    padding-bottom: max(30px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 768px) {
+  @supports (padding: max(0px)) {
+    .portal-wrap {
+      padding-left: max(10px, env(safe-area-inset-left));
+      padding-right: max(10px, env(safe-area-inset-right));
+      padding-bottom: max(18px, env(safe-area-inset-bottom));
+    }
+  }
+}
+
+/* ─── 跳转页面样式 ─────────────────────────────── */
+.jump-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.jump-wrap {
+  width: 100%;
+  max-width: 480px;
+}
+
+.jump-card {
+  padding: 40px 32px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(13, 27, 48, 0.85), rgba(8, 18, 33, 0.92));
+  box-shadow: var(--shadow);
+  text-align: center;
+  backdrop-filter: blur(18px);
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 24px;
+  border: 3px solid rgba(110, 190, 255, 0.15);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.jump-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.jump-name {
+  font-size: 14px;
+  color: var(--text-soft);
+  margin-bottom: 16px;
+}
+
+.jump-message {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-soft);
+  margin-bottom: 20px;
+}
+
+.jump-countdown {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 20px;
+}
+
+.jump-countdown span {
+  color: var(--cyan);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.jump-footer {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 24px;
+  min-height: 18px;
+}
+
+.skip-button {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 14px;
+  border: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #06121f;
+  background: linear-gradient(90deg, #4f8eff, #59d9ff);
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.skip-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.skip-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .jump-card {
+    padding: 28px 20px;
+  }
+  .jump-title {
+    font-size: 20px;
   }
 }
