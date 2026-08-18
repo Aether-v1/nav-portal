@@ -21,6 +21,20 @@ if (config.server.trustProxy) {
 }
 
 // ─── 安全响应头 ────────────────────────────────────────────────
+// 从配置中提取所有测速目标域名的 origin，用于 CSP connect-src（浏览器直接测速需要）
+const pingOrigins = new Set();
+if (Array.isArray(config.site.links)) {
+  config.site.links.forEach((link) => {
+    if (link.ping) {
+      try {
+        const u = new URL(link.ping);
+        pingOrigins.add(u.origin);
+      } catch (_) {}
+    }
+  });
+}
+const pingOriginList = Array.from(pingOrigins).join(' ');
+
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
@@ -34,7 +48,7 @@ app.use((req, res, next) => {
       "style-src 'self' 'unsafe-inline' https://client.crisp.chat",
       "img-src 'self' data: https:",
       "font-src 'self' data: https://client.crisp.chat",
-      "connect-src 'self' https://client.crisp.chat wss://client.crisp.chat wss://client.relay.crisp.chat",
+      "connect-src 'self' https://client.crisp.chat wss://client.crisp.chat wss://client.relay.crisp.chat" + (pingOriginList ? ' ' + pingOriginList : ''),
       "frame-src https://client.crisp.chat",
       "worker-src 'none'",
       "object-src 'none'",
