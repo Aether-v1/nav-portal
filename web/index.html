@@ -6,13 +6,29 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
-    <title>导航页</title>
+    <title>导航门户 - 安全稳定的网络访问入口</title>
     <meta
       name="description"
-      content="稳定、安全、快速的网络访问入口导航页"
+      content="稳定、安全、快速的网络访问入口导航页，多线路实时延迟检测，安全跳转保护。"
     />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="/" />
     <link rel="icon" href="/favicon.ico" />
-    <link rel="stylesheet" href="/css/style.css?v=16" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="导航门户 - 安全稳定的网络访问入口" />
+    <meta property="og:description" content="稳定、安全、快速的网络访问入口导航页，多线路实时延迟检测。" />
+    <meta property="og:url" content="/" />
+    <meta property="og:image" content="/logo.png" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="导航门户 - 安全稳定的网络访问入口" />
+    <meta name="twitter:description" content="稳定、安全、快速的网络访问入口导航页。" />
+    <meta name="twitter:image" content="/logo.png" />
+
+    <link rel="stylesheet" href="/css/style.css?v=17" />
   </head>
   <body>
     <div class="page-shell">
@@ -41,26 +57,26 @@
           <div class="hero-left">
             <div class="brand-row brand-row-center">
               <div class="brand-logo-wrap brand-logo-image-wrap">
-
+                <img src="/logo.png" alt="Logo" class="brand-logo-image" />
               </div>
 
               <div class="brand-copy brand-copy-center">
                 <div class="brand-tag">SECURE NETWORK ACCESS</div>
-                <h1 id="siteName">加载中...</h1>
-                <p id="siteSubtitle" class="site-subtitle"></p>
+                <h1 id="siteName">导航门户</h1>
+                <p id="siteSubtitle" class="site-subtitle">安全稳定 · 多线路入口</p>
               </div>
             </div>
 
             <div class="hero-notice hero-notice-center">
               <div class="notice-label">系统公告</div>
               <div class="notice-content" id="siteNotice">
-                正在获取最新公告内容...
+                谨防失联，牢记域名
               </div>
             </div>
 
             <div class="hero-actions hero-actions-center">
               <button class="main-action-button" type="button" id="heroButton">
-                example.com
+                牢记域名
               </button>
             </div>
           </div>
@@ -83,7 +99,9 @@
                 </button>
               </div>
 
-              <div class="links-grid" id="linksGrid"></div>
+              <div class="links-grid" id="linksGrid">
+                <div class="error-tip">正在加载线路列表...</div>
+              </div>
             </section>
 
             <section class="panel panel-tg-single">
@@ -128,9 +146,9 @@
         }
       })();
     </script>
-    <!-- Crisp 客服脚本：请在部署时替换为自己的 WEBSITE_ID
+    <!-- Crisp 客服脚本：部署时取消注释并替换为自己的 WEBSITE_ID
     <script type="text/javascript">window.$crisp=[];window.CRISP_WEBSITE_ID="your-website-id";(function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();</script>
     -->
-    <script src="/js/index.js?v=16"></script>
+    <script src="/js/index.js?v=17"></script>
   </body>
 </html>
