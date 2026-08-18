@@ -215,6 +215,9 @@
   }
 
   async function init() {
+    var yearEl = document.getElementById('footerYear');
+    if (yearEl) yearEl.textContent = new Date().getFullYear();
+
     try {
       var config = await loadConfig();
 
