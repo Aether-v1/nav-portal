@@ -32,27 +32,30 @@
     return null;
   }
 
+  // 延迟分级：<100优秀 / 100-200良好 / 200-400一般 / 400-800较高 / >800很高
   function getDelayClass(delay) {
     if (delay === null || delay === undefined) return 'delay-bad';
-    if (delay < 200) return 'delay-excellent';
-    if (delay < 400) return 'delay-good';
-    if (delay < 800) return 'delay-normal';
+    if (delay < 100) return 'delay-excellent';
+    if (delay < 200) return 'delay-good';
+    if (delay < 400) return 'delay-normal';
+    if (delay < 800) return 'delay-high';
     return 'delay-bad';
   }
 
   function getDelayLabel(delay) {
-    if (delay === null || delay === undefined) return '超时';
-    if (delay < 200) return '优秀';
-    if (delay < 400) return '良好';
-    if (delay < 800) return '一般';
-    return '较高';
+    if (delay === null || delay === undefined) return '无法访问';
+    if (delay < 100) return '优秀';
+    if (delay < 200) return '良好';
+    if (delay < 400) return '一般';
+    if (delay < 800) return '较高';
+    return '很高';
   }
 
-  function applyDelayResult(delayEl, ms) {
-    if (ms === null || ms === undefined) {
+  function applyDelayResult(delayEl, ms, status) {
+    if (status === 'unavailable' || ms === null || ms === undefined) {
       delayEl.className = 'link-delay delay-bad';
-      delayEl.textContent = '超时';
-      delayEl.setAttribute('aria-label', '延迟：超时');
+      delayEl.textContent = '无法访问';
+      delayEl.setAttribute('aria-label', '延迟：无法访问');
       return;
     }
     delayEl.className = 'link-delay ' + getDelayClass(ms);
@@ -101,6 +104,7 @@
     var card = document.createElement('div');
     card.className = 'link-card';
     card.dataset.id = String(link.id);
+    card.dataset.ping = link.ping || '';
 
     var badgeHtml = link.badge
       ? '<span class="link-badge">' + escapeHtml(link.badge) + '</span>'
@@ -122,40 +126,82 @@
     return card;
   }
 
-  async function pingLink(linkId, delayEl) {
-    if (!pageVisible) return null;
+  // 单次测速：浏览器直接访问目标 ping 地址
+  function singlePing(pingUrl, signal) {
+    return new Promise(function (resolve) {
+      var sep = pingUrl.indexOf('?') === -1 ? '?' : '&';
+      var url = pingUrl + sep + 't=' + Date.now() + '-' + Math.random().toString(36).slice(2);
+      var start = performance.now();
 
-    var ctrl = createAbortController();
-    try {
-      var response = await fetch('/api/ping?id=' + encodeURIComponent(linkId), {
+      fetch(url, {
         method: 'GET',
         cache: 'no-store',
-        signal: ctrl ? ctrl.signal : undefined
-      });
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          delayEl.textContent = '繁忙';
-          delayEl.className = 'link-delay delay-normal';
-          return null;
+        signal: signal
+      }).then(function (response) {
+        var elapsed = Math.round(performance.now() - start);
+        if (response.ok) {
+          resolve(elapsed);
+        } else {
+          resolve(null);
         }
-        throw new Error('ping failed: ' + response.status);
+      }).catch(function (err) {
+        if (err.name === 'AbortError') {
+          resolve(null);
+        } else {
+          resolve(null);
+        }
+      });
+    });
+  }
+
+  // 单条线路测速：预热1次 + 正式3次 + 取中位数
+  async function pingLink(pingUrl, delayEl) {
+    if (!pageVisible || !pingUrl) {
+      applyDelayResult(delayEl, null, 'unavailable');
+      return null;
+    }
+
+    var ctrl = createAbortController();
+    var signal = ctrl ? ctrl.signal : undefined;
+
+    try {
+      // 预热1次，不计入结果
+      await singlePing(pingUrl, signal);
+      if (!pageVisible || (signal && signal.aborted)) return null;
+
+      // 正式测试3次
+      var results = [];
+      for (var i = 0; i < 3; i++) {
+        if (!pageVisible || (signal && signal.aborted)) break;
+        var r = await singlePing(pingUrl, signal);
+        if (r !== null) results.push(r);
       }
 
-      var data = await response.json();
-      if (data.success && data.status === 'ok') {
-        applyDelayResult(delayEl, data.delay);
-        return data.delay;
+      if (results.length === 0) {
+        applyDelayResult(delayEl, null, 'unavailable');
+        return null;
       }
-      applyDelayResult(delayEl, null);
-      return null;
+
+      // 取中位数
+      results.sort(function (a, b) { return a - b; });
+      var median;
+      if (results.length % 2 === 1) {
+        median = results[Math.floor(results.length / 2)];
+      } else {
+        median = Math.round((results[results.length / 2 - 1] + results[results.length / 2]) / 2);
+      }
+
+      applyDelayResult(delayEl, median, 'ok');
+      return median;
     } catch (err) {
-      if (err.name === 'AbortError') return null;
-      applyDelayResult(delayEl, null);
+      if (err.name !== 'AbortError') {
+        applyDelayResult(delayEl, null, 'unavailable');
+      }
       return null;
     }
   }
 
+  // 并行测速所有线路
   async function refreshAllDelays() {
     if (isRefreshing) return;
     isRefreshing = true;
@@ -170,28 +216,24 @@
     }
 
     try {
-      var MAX_CONCURRENT = 2;
-      var index = 0;
-
-      async function worker() {
-        while (index < cards.length) {
-          if (!pageVisible) return;
-          var card = cards[index++];
-          var linkId = card.dataset.id;
-          var delayEl = card._delayEl || card.querySelector('.link-delay');
-          if (delayEl) {
-            delayEl.className = 'link-delay delay-normal';
-            delayEl.textContent = '检测中...';
-          }
-          await pingLink(linkId, delayEl);
+      // 所有卡片重置为检测中
+      cards.forEach(function (card) {
+        var delayEl = card._delayEl || card.querySelector('.link-delay');
+        if (delayEl) {
+          delayEl.className = 'link-delay delay-normal';
+          delayEl.textContent = '检测中...';
         }
-      }
+      });
 
-      var workers = [];
-      for (var i = 0; i < Math.min(MAX_CONCURRENT, cards.length); i++) {
-        workers.push(worker());
-      }
-      await Promise.all(workers);
+      // 完全并行测试所有线路
+      var promises = cards.map(function (card) {
+        if (!pageVisible) return null;
+        var pingUrl = card.dataset.ping;
+        var delayEl = card._delayEl || card.querySelector('.link-delay');
+        return pingLink(pingUrl, delayEl);
+      });
+
+      await Promise.all(promises);
     } finally {
       isRefreshing = false;
       if (button) {
@@ -221,7 +263,7 @@
     try {
       var config = await loadConfig();
 
-      // 尽早加载 Crisp（预连接已在 HTML 中建立，这里立即开始加载脚本）
+      // 尽早加载 Crisp
       if (config.crispWebsiteId) {
         try {
           window.$crisp = [];

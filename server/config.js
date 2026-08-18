@@ -139,7 +139,8 @@ function getPublicConfig(config) {
       id: link.id,
       name: link.name,
       badge: link.badge,
-      enabled: link.enabled
+      enabled: link.enabled,
+      ping: link.ping || ''
     }))
   };
 }

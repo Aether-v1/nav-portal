@@ -9,7 +9,7 @@
 - 导航首页（科技感深色主题）
 - 安全跳转页（倒计时 + 服务端验证）
 - 多线路入口配置
-- 实时延迟检测（后端代理测速，避免 CORS）
+- 实时延迟检测（用户浏览器直接测速，反映真实网络延迟，预热+3次取中位数）
 - TG 群组 / 客户端下载按钮
 - 简单 UA 拦截
 - 访问 / 跳转 / 风险 / 错误日志（自动轮转）
@@ -21,13 +21,11 @@
 
 ## 安全设计
 
-- **真实线路 URL 不暴露给前端**：`/api/config` 只返回白名单字段，线路仅含 `id / name / badge / enabled`
+- **真实线路 URL 不暴露给前端**：`/api/config` 只返回白名单字段，线路仅含 `id / name / badge / enabled / ping`（`ping` 为健康检查地址，非真实入口 URL）
 - **统一服务端跳转**：首页 → `/jump?id=X` → 服务端验证 → 真实目标，禁止任意 URL 跳转
-- **后端测速**：`/api/ping?id=X` 由服务端请求，避免 CORS；目标 URL 来自配置白名单，禁止 `?url=` 参数，防 SSRF
-- **SSRF 防护**：测速目标禁止 localhost / 127.0.0.1 / 私有 IP 段 / 元数据地址 / IPv6 回环和内网地址
-- **DNS Rebinding**：测速目标 URL 仅来自管理员 `.env` 配置，API 不接受用户提供的任意 URL，因此 DNS rebinding 风险极低。若管理员配置的域名 DNS 被劫持或轮流解析到内网，理论上存在风险，属于管理员配置风险。当前未实现 DNS 解析二次验证，以避免影响 Cloudflare 等 CDN 域名的正常测速
+- **用户侧浏览器测速**：浏览器直接访问各线路配置的 `ping` 地址，预热 1 次 + 正式 3 次取中位数，反映用户当前网络的真实延迟；测速地址仅来自服务端配置，前端无法提交任意 URL
 - **跳转 URL Scheme 校验**：仅允许 `http:` / `https:`，禁止 `javascript:` / `data:` / `file:` 等危险 Scheme
-- **API 限流**：内存级 IP 限流，保护 `/api/config`、`/api/jump/*`、`/api/ping`
+- **API 限流**：内存级 IP 限流，保护 `/api/config`、`/api/jump/*`
 - **日志隐私**：支持 IP 脱敏、日志自动轮转、`/logs` 禁止 Web 访问
 - **安全响应头**：CSP、X-Content-Type-Options、X-Frame-Options、Referrer-Policy、Permissions-Policy
 - **API 不缓存**：所有 `/api/*` 响应设置 `Cache-Control: no-store`，防止 CDN 缓存动态配置
@@ -81,7 +79,7 @@ npm run dev
 | `NAV_LINK_COUNT` | 线路数量 |
 | `NAV_LINK_X_NAME` | 线路名称 |
 | `NAV_LINK_X_URL` | 真实跳转地址（仅服务端可见） |
-| `NAV_LINK_X_PING` | 测速地址（服务端请求） |
+| `NAV_LINK_X_PING` | 测速地址（用户浏览器直接请求，需配置 CORS） |
 | `NAV_LINK_X_BADGE` | 线路标签（可选） |
 | `TRUST_PROXY_HOPS` | 信任代理层数 |
 | `RATE_LIMIT_MAX` | 普通 API 每分钟限流 |
@@ -250,21 +248,51 @@ server {
   "jumpFooter": "...",
   "tg": { "url": "https://t.me/...", "text": "官方TG群组" },
   "links": [
-    { "id": 1, "name": "NO.1官网", "badge": "官网", "enabled": true }
+    { "id": 1, "name": "NO.1官网", "badge": "官网", "enabled": true, "ping": "https://a.example.com/ping.txt" }
   ]
 }
 ```
 
-### `GET /api/ping?id=1`
+> 注意：`links` 中不包含真实入口 `url`，仅包含健康检查地址 `ping`。真实 URL 仅在 `/api/jump/resolve` 验证后返回。
 
-服务端代理测速，返回延迟毫秒数。
+### 用户侧浏览器测速
 
-**响应：**
-```json
-{ "success": true, "id": 1, "delay": 82, "status": "ok" }
+测速由用户浏览器直接访问各线路配置的 `ping` 地址完成，**不经过 Nav Portal 后端代理**。
+
+**测速流程：**
+1. 预热请求 1 次（不计入结果）
+2. 正式测试 3 次
+3. 取 3 次结果的中位数显示
+
+**延迟分级：**
+
+| 延迟 | 等级 |
+|------|------|
+| < 100ms | 优秀 |
+| 100-200ms | 良好 |
+| 200-400ms | 一般 |
+| 400-800ms | 较高 |
+| > 800ms | 很高 |
+| 失败 | 无法访问 |
+
+**各官网 `/ping` 接口要求：**
+- 返回 HTTP 200，内容任意（如 `{"ok":true}` 或纯文本）
+- 设置 `Cache-Control: no-store, no-cache, must-revalidate`
+- 设置 `Access-Control-Allow-Origin` 允许导航页域名访问
+- 建议使用 `HEAD` 或轻量 `GET` 接口
+
+**Nginx `/ping` 配置示例：**
+```nginx
+location = /ping.txt {
+    default_type text/plain;
+    return 200 "ok";
+    add_header Cache-Control "no-store, no-cache, must-revalidate" always;
+    add_header Access-Control-Allow-Origin "https://你的导航页域名" always;
+    add_header Access-Control-Allow-Methods "GET, HEAD" always;
+}
 ```
 
-失败时 `delay: null, status: "timeout"`。
+> 如果使用 Cloudflare CDN，确保 `/ping.txt` 不被缓存（Cloudflare 规则中设置 Cache Level: Bypass）。
 
 ### `GET /api/jump/meta?id=1`
 
@@ -338,7 +366,7 @@ nav-portal/
 
 - **Node 监听地址**：默认监听 `127.0.0.1:3000`，外网无法直接访问，必须通过 Nginx 反代。如需调试可设置 `BIND_ADDRESS=0.0.0.0`
 - 真实跳转地址仅在 `/api/jump/resolve` 中返回，首页接口不包含
-- 测速由服务端代理，目标地址必须是 `https` 或 `http`，禁止内网地址（含 IPv6）
+- 测速由用户浏览器直接访问各线路 `ping` 地址，预热1次+3次取中位数；各官网需配置 CORS 允许导航页域名访问
 - 跳转 URL 强制校验 Scheme，仅允许 `http:` / `https:`，禁止 `javascript:` / `data:` / `file:` 等
 - 限流为内存级，重启后清零；单进程 PM2（fork 模式）下正常工作
 - `logs/` 目录已通过应用层禁止 Web 访问，Nginx 层也建议加 `deny all`

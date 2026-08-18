@@ -1,6 +1,4 @@
 const path = require('path');
-const http = require('http');
-const https = require('https');
 const { URL } = require('url');
 const express = require('express');
 const morgan = require('morgan');
@@ -249,104 +247,9 @@ function isSafeRedirectUrl(url) {
   }
 }
 
-// ─── 后端测速 ─────────────────────────────────────────────────
-const pingCache = new Map();
-let pingConcurrent = 0;
-
-function serverPing(targetUrl, timeout) {
-  return new Promise((resolve) => {
-    const start = Date.now();
-    const client = targetUrl.startsWith('https') ? https : http;
-
-    const req = client.get(targetUrl, {
-      timeout,
-      headers: { 'User-Agent': 'nav-portal-health-check/1.0' }
-    }, (res) => {
-      res.resume();
-      res.on('end', () => {
-        resolve({ ok: true, delay: Date.now() - start, status: res.statusCode });
-      });
-    });
-
-    req.on('timeout', () => {
-      req.destroy();
-      resolve({ ok: false, delay: null, error: 'timeout' });
-    });
-    req.on('error', (err) => {
-      resolve({ ok: false, delay: null, error: err.code || 'network_error' });
-    });
-  });
-}
-
-async function measurePingWithRetry(link, timeout, retries = 2) {
-  let lastResult = null;
-  for (let attempt = 0; attempt <= retries; attempt += 1) {
-    const result = await serverPing(link.ping, timeout);
-    if (result.ok) return result;
-    lastResult = result;
-    if (attempt < retries) {
-      await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
-    }
-  }
-  return lastResult;
-}
-
 // ─── API: 公开配置 ────────────────────────────────────────────
 app.get('/api/config', rateLimit(config.rateLimit.maxRequests, config.rateLimit.windowMs), (req, res) => {
   res.json(getPublicConfig(config));
-});
-
-// ─── API: 后端测速 ────────────────────────────────────────────
-app.get('/api/ping', rateLimit(config.rateLimit.pingMax, config.rateLimit.windowMs), async (req, res) => {
-  if (!config.ping.enabled) {
-    return sendError(res, 403, '测速功能未启用', 'PING_DISABLED');
-  }
-
-  const id = parseLinkId(req.query.id);
-  if (!id) {
-    return sendError(res, 400, '无效的线路 ID', 'INVALID_ID');
-  }
-
-  const link = getEnabledLink(id);
-  if (!link) {
-    return sendError(res, 404, '线路不存在', 'LINK_NOT_FOUND');
-  }
-
-  if (!link.ping) {
-    return res.json({ success: true, id, delay: null, status: 'unavailable' });
-  }
-
-  if (!isSafeUrl(link.ping)) {
-    return sendError(res, 400, '测速地址不安全', 'UNSAFE_TARGET');
-  }
-
-  if (pingConcurrent >= config.ping.maxConcurrent) {
-    return sendError(res, 429, '测速服务繁忙，请稍后重试', 'PING_BUSY');
-  }
-
-  const cacheKey = String(id);
-  const cached = pingCache.get(cacheKey);
-  if (cached && Date.now() - cached.time < config.ping.cacheTtl) {
-    return res.json({ success: true, id, delay: cached.delay, status: cached.delay !== null ? 'ok' : 'timeout', cached: true });
-  }
-
-  pingConcurrent += 1;
-  try {
-    const result = await measurePingWithRetry(link, config.ping.timeout, 2);
-    const delay = result.ok ? result.delay : null;
-    pingCache.set(cacheKey, { time: Date.now(), delay });
-    return res.json({
-      success: true,
-      id,
-      delay,
-      status: result.ok ? 'ok' : 'timeout'
-    });
-  } catch (err) {
-    logger.error({ message: 'ping failed', error: err.message, linkId: id });
-    return sendError(res, 500, '测速失败', 'PING_ERROR');
-  } finally {
-    pingConcurrent = Math.max(0, pingConcurrent - 1);
-  }
 });
 
 // ─── API: Jump Meta ───────────────────────────────────────────

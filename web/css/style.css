@@ -434,6 +434,13 @@ select {
   text-align: center;
 }
 
+.panel-subtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.4;
+}
+
 .panel-badge {
   padding: 8px 12px;
   border-radius: 999px;
@@ -539,6 +546,10 @@ select {
 
 .delay-normal {
   color: var(--yellow);
+}
+
+.delay-high {
+  color: #ff9f43;
 }
 
 .delay-bad {
