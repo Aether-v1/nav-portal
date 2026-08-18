@@ -448,8 +448,9 @@ app.use((err, req, res, _next) => {
 });
 
 // ─── 启动 + Graceful Shutdown ─────────────────────────────────
-const server = app.listen(config.server.port, () => {
-  console.log(`nav-portal running on :${config.server.port}`);
+// 默认监听 127.0.0.1，仅允许本机 Nginx 反代访问，避免外网直连 Node
+const server = app.listen(config.server.port, config.server.bindAddress, () => {
+  console.log(`nav-portal running on ${config.server.bindAddress}:${config.server.port}`);
 });
 
 function shutdown(signal) {

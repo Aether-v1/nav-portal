@@ -50,6 +50,7 @@ function getConfig() {
   return {
     server: {
       port: toNum(process.env.PORT, 3000),
+      bindAddress: process.env.BIND_ADDRESS || '127.0.0.1',
       trustProxy: toBool(process.env.TRUST_PROXY, true),
       trustProxyHopCount: toNum(process.env.TRUST_PROXY_HOPS, 1),
       enableAccessLog: toBool(process.env.ENABLE_ACCESS_LOG, true),
