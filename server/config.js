@@ -42,11 +42,16 @@ function parseLinks() {
 
 function getConfig() {
   const links = parseLinks();
+  const linksById = links.reduce((acc, item) => {
+    acc[String(item.id)] = item;
+    return acc;
+  }, {});
 
   return {
     server: {
       port: toNum(process.env.PORT, 3000),
       trustProxy: toBool(process.env.TRUST_PROXY, true),
+      trustProxyHopCount: toNum(process.env.TRUST_PROXY_HOPS, 1),
       enableAccessLog: toBool(process.env.ENABLE_ACCESS_LOG, true),
       enableUaBlock: toBool(process.env.ENABLE_UA_BLOCK, false),
       blockedUaKeywords: (process.env.BLOCKED_UA_KEYWORDS || '')
@@ -85,14 +90,54 @@ function getConfig() {
       },
       links
     },
-    links: links.reduce((acc, item) => {
-      acc[String(item.id)] = item;
-      return acc;
-    }, {}),
+    links: linksById,
+    ping: {
+      enabled: toBool(process.env.PING_ENABLED, true),
+      timeout: toNum(process.env.PING_TIMEOUT, 3000),
+      maxConcurrent: toNum(process.env.PING_MAX_CONCURRENT, 3),
+      cacheTtl: toNum(process.env.PING_CACHE_TTL, 30000)
+    },
+    rateLimit: {
+      enabled: toBool(process.env.RATE_LIMIT_ENABLED, true),
+      windowMs: toNum(process.env.RATE_LIMIT_WINDOW_MS, 60000),
+      maxRequests: toNum(process.env.RATE_LIMIT_MAX, 120),
+      pingMax: toNum(process.env.RATE_LIMIT_PING_MAX, 30)
+    },
+    logging: {
+      maxFileSize: toNum(process.env.LOG_MAX_FILE_SIZE, 10 * 1024 * 1024),
+      maxFiles: toNum(process.env.LOG_MAX_FILES, 5),
+      anonymizeIp: toBool(process.env.LOG_ANONYMIZE_IP, false),
+      enableJumpLog: toBool(process.env.LOG_ENABLE_JUMP, true),
+      enableRiskLog: toBool(process.env.LOG_ENABLE_RISK, true)
+    },
     paths: {
       logDir: path.join(__dirname, '..', 'logs'),
       webDir: path.join(__dirname, '..', 'web')
     }
+  };
+}
+
+function getPublicConfig(config) {
+  return {
+    siteName: config.site.siteName,
+    siteDomain: config.site.siteDomain,
+    siteNotice: config.site.siteNotice,
+    siteSubtitle: config.site.siteSubtitle,
+    heroButtonText: config.site.heroButtonText,
+    jumpSeconds: config.site.jumpSeconds,
+    jumpTitle: config.site.jumpTitle,
+    jumpMessage: config.site.jumpMessage,
+    jumpFooter: config.site.jumpFooter,
+    tg: {
+      url: config.site.tg.url,
+      text: config.site.tg.text
+    },
+    links: config.site.links.map((link) => ({
+      id: link.id,
+      name: link.name,
+      badge: link.badge,
+      enabled: link.enabled
+    }))
   };
 }
 
@@ -104,5 +149,6 @@ function ensureLogDir(logDir) {
 
 module.exports = {
   getConfig,
+  getPublicConfig,
   ensureLogDir
 };
