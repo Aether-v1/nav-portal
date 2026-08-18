@@ -138,9 +138,7 @@
       </main>
     </div>
 
-    <!-- Crisp 客服脚本：部署时取消注释并替换为自己的 WEBSITE_ID
-    <script type="text/javascript">window.$crisp=[];window.CRISP_WEBSITE_ID="your-website-id";(function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();</script>
-    -->
-    <script src="/js/index.js?v=18"></script>
+    <!-- Crisp 客服由 /api/config 返回 crispWebsiteId 后动态加载，无需在此硬编码 -->
+    <script src="/js/index.js?v=19"></script>
   </body>
 </html>

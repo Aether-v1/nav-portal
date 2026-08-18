@@ -280,6 +280,18 @@
         }
       }
 
+      // 动态加载 Crisp 客服（如果配置了 WEBSITE_ID）
+      if (config.crispWebsiteId) {
+        try {
+          window.$crisp = [];
+          window.CRISP_WEBSITE_ID = config.crispWebsiteId;
+          var crispScript = document.createElement('script');
+          crispScript.src = 'https://client.crisp.chat/l.js';
+          crispScript.async = 1;
+          document.getElementsByTagName('head')[0].appendChild(crispScript);
+        } catch (_) {}
+      }
+
       var refreshDelayButton = document.getElementById('refreshDelayButton');
       if (refreshDelayButton) {
         refreshDelayButton.addEventListener('click', refreshAllDelays);

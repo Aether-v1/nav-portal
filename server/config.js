@@ -75,6 +75,7 @@ function getConfig() {
         url: process.env.TG_URL || '',
         text: process.env.TG_TEXT || '官方TG群组'
       },
+      crispWebsiteId: process.env.CRISP_WEBSITE_ID || '',
       downloads: {
         android: {
           url: process.env.DOWNLOAD_ANDROID || '',
@@ -133,6 +134,7 @@ function getPublicConfig(config) {
       url: config.site.tg.url,
       text: config.site.tg.text
     },
+    crispWebsiteId: config.site.crispWebsiteId,
     links: config.site.links.map((link) => ({
       id: link.id,
       name: link.name,

@@ -36,7 +36,7 @@ app.use((req, res, next) => {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
-      "connect-src 'self'",
+      "connect-src 'self' https://client.crisp.chat wss://client.crisp.chat",
       "frame-src https://client.crisp.chat",
       "worker-src 'none'",
       "object-src 'none'",
