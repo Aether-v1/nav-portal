@@ -30,41 +30,179 @@
 - **安全响应头**：CSP、X-Content-Type-Options、X-Frame-Options、Referrer-Policy、Permissions-Policy
 - **API 不缓存**：所有 `/api/*` 响应设置 `Cache-Control: no-store`，防止 CDN 缓存动态配置
 
-## 1. 安装
+## 1. 快速开始（5步上线）
 
-### 生产环境（推荐）
+### 步骤 1：克隆仓库
 
 ```bash
-cd /www/wwwroot/nav-portal
-cp .env.example .env
-# 编辑 .env 配置站点信息和线路
-npm ci --omit=dev
-pm2 start ecosystem.config.js
+cd /www/wwwroot
+git clone https://github.com/你的用户名/nav-portal.git
+cd nav-portal
 ```
 
-`npm ci` 会严格按照 `package-lock.json` 安装锁定版本，确保生产环境依赖一致。
+### 步骤 2：复制并编辑配置
 
-### 开发环境
+```bash
+cp .env.example .env
+vi .env
+```
+
+**必须修改的配置项：**
+
+```env
+# 站点信息
+SITE_NAME=你的站点名称
+SITE_DOMAIN=你的导航页域名.com
+SITE_SUBTITLE=安全稳定 · 多线路入口
+
+# Telegram 群组
+TG_URL=https://t.me/你的群组
+TG_TEXT=官方TG群组
+
+# 线路配置（至少1条，最多按需增加）
+NAV_LINK_COUNT=3
+
+NAV_LINK_1_NAME=线路1名称
+NAV_LINK_1_URL=https://线路1真实地址.com
+NAV_LINK_1_PING=https://线路1真实地址.com/ping.txt
+NAV_LINK_1_ENABLED=true
+NAV_LINK_1_BADGE=官网
+
+NAV_LINK_2_NAME=线路2名称
+NAV_LINK_2_URL=https://线路2真实地址.com
+NAV_LINK_2_PING=https://线路2真实地址.com/ping.txt
+NAV_LINK_2_ENABLED=true
+NAV_LINK_2_BADGE=备用
+
+NAV_LINK_3_NAME=线路3名称
+NAV_LINK_3_URL=https://线路3真实地址.com
+NAV_LINK_3_PING=https://线路3真实地址.com/ping.txt
+NAV_LINK_3_ENABLED=true
+NAV_LINK_3_BADGE=备用
+```
+
+> **重要**：`NAV_LINK_X_URL` 是真实跳转地址，不会暴露给前端；`NAV_LINK_X_PING` 是测速地址，会返回给前端用于浏览器测速。
+
+### 步骤 3：安装依赖
+
+```bash
+npm ci --omit=dev
+```
+
+> 生产环境必须使用 `npm ci --omit=dev`，不要使用 `npm install` 或 `npm audit fix`，避免依赖版本不一致。
+
+### 步骤 4：给各官网配置测速接口
+
+每个线路的 `NAV_LINK_X_PING` 对应的网站都需要配置 `/ping.txt`，否则测速会显示"无法访问"。
+
+在各官网的 Nginx 配置中添加：
+
+```nginx
+location = /ping.txt {
+    default_type text/plain;
+    return 200 "ok";
+    add_header Cache-Control "no-store, no-cache, must-revalidate" always;
+    add_header Access-Control-Allow-Origin "https://你的导航页域名.com" always;
+    add_header Access-Control-Allow-Methods "GET, HEAD" always;
+}
+```
+
+然后重载 Nginx：
+
+```bash
+nginx -t && nginx -s reload
+```
+
+验证测速接口是否正常：
+
+```bash
+curl -I https://线路1真实地址.com/ping.txt
+```
+
+确认返回 `200` 且包含 `Access-Control-Allow-Origin: https://你的导航页域名.com`。
+
+> 如果使用 Cloudflare CDN，需在 Cloudflare 规则中添加：URL 路径等于 `/ping.txt` → Cache Level: Bypass，防止 CDN 缓存影响测速。
+
+### 步骤 5：启动服务
+
+```bash
+npm install -g pm2
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
+```
+
+验证服务是否正常：
+
+```bash
+curl http://127.0.0.1:3000/health
+# 应返回 {"ok":true,"uptime":...}
+
+curl http://127.0.0.1:3000/api/config
+# 应返回站点配置和线路列表（不含真实 URL）
+```
+
+### 步骤 6：配置 Nginx 反代
+
+在 Nginx 中添加站点配置：
+
+```nginx
+server {
+    listen 80;
+    server_name 你的导航页域名.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name 你的导航页域名.com;
+
+    ssl_certificate /path/to/fullchain.pem;
+    ssl_certificate_key /path/to/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /logs {
+        deny all;
+    }
+}
+```
+
+```bash
+nginx -t && nginx -s reload
+```
+
+现在访问 `https://你的导航页域名.com` 应该可以看到导航页。
+
+---
+
+## 2. 环境要求
+
+- Node.js >= 16.x（推荐 18.x LTS）
+- Nginx 或 OpenResty（反代）
+- PM2（进程管理）
+- 可选：Cloudflare（CDN + WAF）
+
+## 3. 开发环境
 
 ```bash
 npm install
 npm run dev
 ```
 
-默认端口为 `3000`，默认监听 `127.0.0.1`（仅本机访问，需通过 Nginx 反代）。
-
-如需监听所有网卡（不推荐生产环境），设置环境变量：
-```bash
-BIND_ADDRESS=0.0.0.0 pm2 start ecosystem.config.js
-```
-
-## 2. 开发启动
+默认端口 `3000`，默认监听 `127.0.0.1`。如需外网调试：
 
 ```bash
-npm run dev
+BIND_ADDRESS=0.0.0.0 npm run dev
 ```
 
-## 3. 关键配置
+## 4. 配置项说明
 
 编辑 `.env`：
 
@@ -87,7 +225,7 @@ npm run dev
 
 完整配置项见 `.env.example`。
 
-## 4. PM2 启动
+## 5. PM2 管理
 
 ```bash
 npm install -g pm2
@@ -104,7 +242,7 @@ pm2 restart nav-portal
 
 > **注意**：当前限流为内存级实现。PM2 `instances: 1`（fork 模式）下限流正常工作。若改为 cluster 多进程，每个进程独立计数，实际限流阈值会乘以进程数。如需多进程精确限流，建议引入 Redis。
 
-## 5. Nginx 反代与 Cloudflare 配置
+## 6. Nginx 反代与 Cloudflare 配置
 
 ### 架构说明
 
@@ -228,7 +366,7 @@ server {
 - Cloudflare SSL/TLS 设置中选择「完整（严格）」
 - Cloudflare 后台 → 规则 → 可以添加 WAF 规则进一步防护
 
-## 6. API 文档
+## 7. API 文档
 
 ### `GET /api/config`
 
@@ -325,7 +463,7 @@ location = /ping.txt {
 
 错误码：`INVALID_ID` / `LINK_NOT_FOUND` / `RATE_LIMITED` / `FORBIDDEN` / `UNSAFE_TARGET` / `PING_BUSY` / `INTERNAL_ERROR`
 
-## 7. 日志
+## 8. 日志
 
 日志自动写入 `logs/` 目录：
 
@@ -338,7 +476,7 @@ location = /ping.txt {
 
 **隐私**：设置 `LOG_ANONYMIZE_IP=true` 可对日志中的 IP 脱敏（IPv4 保留前两段）。
 
-## 8. 目录结构
+## 9. 目录结构
 
 ```
 nav-portal/
@@ -362,7 +500,7 @@ nav-portal/
 └── README.md
 ```
 
-## 9. 注意事项
+## 10. 注意事项与常见问题
 
 - **Node 监听地址**：默认监听 `127.0.0.1:3000`，外网无法直接访问，必须通过 Nginx 反代。如需调试可设置 `BIND_ADDRESS=0.0.0.0`
 - 真实跳转地址仅在 `/api/jump/resolve` 中返回，首页接口不包含
@@ -373,3 +511,55 @@ nav-portal/
 - 修改 `.env` 后需重启服务（`pm2 restart nav-portal`）
 - 生产环境使用 `npm ci --omit=dev` 安装锁定版本，不要在生产服务器执行 `npm audit fix`
 - Cloudflare 部署时，务必在 Nginx 或防火墙层限制仅 Cloudflare IP 可访问，防止 `CF-Connecting-IP` 伪造
+
+## 11. 常见问题排查
+
+### Q: 所有线路都显示"无法访问"
+
+**原因**：测速目标网站没有配置 `/ping.txt` 或 CORS 头不正确。
+
+**排查**：
+```bash
+# 1. 确认测速接口返回 200
+curl -I https://线路域名/ping.txt
+
+# 2. 确认有 CORS 头
+curl -I https://线路域名/ping.txt | grep access-control
+```
+
+**解决**：在各线路网站的 Nginx 中添加 `/ping.txt` 配置（见快速开始步骤 4），并确保 `Access-Control-Allow-Origin` 是你的导航页域名。
+
+### Q: 部分线路显示"无法访问"，其他正常
+
+**原因**：该线路网站没有配置 `/ping.txt`，或 Cloudflare 缓存了旧响应。
+
+**解决**：
+1. 给该线路配置 `/ping.txt`
+2. Cloudflare 后台清除缓存，或添加 `/ping.txt` Cache Bypass 规则
+
+### Q: 修改 .env 后不生效
+
+**原因**：Node 服务没有重启。
+
+**解决**：
+```bash
+pm2 restart nav-portal
+```
+
+### Q: 页面显示"配置加载失败"
+
+**原因**：Node 服务未启动或端口不对。
+
+**排查**：
+```bash
+pm2 status
+curl http://127.0.0.1:3000/health
+```
+
+### Q: 真实线路 URL 会不会泄露？
+
+不会。`/api/config` 只返回线路的 `id / name / badge / enabled / ping`，不返回真实 `url`。真实 URL 仅在用户点击「点击进入」后，通过 `/api/jump/resolve?id=X` 验证后返回。
+
+### Q: 可以自动跳转到最快线路吗？
+
+不可以，也不建议。延迟仅供参考，用户应根据自身需求手动选择入口。
