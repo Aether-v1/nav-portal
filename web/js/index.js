@@ -221,6 +221,18 @@
     try {
       var config = await loadConfig();
 
+      // 尽早加载 Crisp（预连接已在 HTML 中建立，这里立即开始加载脚本）
+      if (config.crispWebsiteId) {
+        try {
+          window.$crisp = [];
+          window.CRISP_WEBSITE_ID = config.crispWebsiteId;
+          var crispScript = document.createElement('script');
+          crispScript.src = 'https://client.crisp.chat/l.js';
+          crispScript.async = 1;
+          document.getElementsByTagName('head')[0].appendChild(crispScript);
+        } catch (_) {}
+      }
+
       if (config.siteName) {
         document.title = config.siteName + ' - 导航门户';
       }
@@ -278,18 +290,6 @@
         } else {
           tgButton.style.display = 'none';
         }
-      }
-
-      // 动态加载 Crisp 客服（如果配置了 WEBSITE_ID）
-      if (config.crispWebsiteId) {
-        try {
-          window.$crisp = [];
-          window.CRISP_WEBSITE_ID = config.crispWebsiteId;
-          var crispScript = document.createElement('script');
-          crispScript.src = 'https://client.crisp.chat/l.js';
-          crispScript.async = 1;
-          document.getElementsByTagName('head')[0].appendChild(crispScript);
-        } catch (_) {}
       }
 
       var refreshDelayButton = document.getElementById('refreshDelayButton');

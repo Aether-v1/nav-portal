@@ -15,6 +15,11 @@
     <link rel="canonical" href="/" />
     <link rel="icon" href="/favicon.ico" />
 
+    <!-- 预连接 Crisp，加快客服弹窗加载 -->
+    <link rel="preconnect" href="https://client.crisp.chat" crossorigin />
+    <link rel="dns-prefetch" href="https://client.crisp.chat" />
+    <link rel="preconnect" href="https://client.relay.crisp.chat" crossorigin />
+
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="导航门户 - 安全稳定的网络访问入口" />
@@ -139,6 +144,6 @@
     </div>
 
     <!-- Crisp 客服由 /api/config 返回 crispWebsiteId 后动态加载，无需在此硬编码 -->
-    <script src="/js/index.js?v=19"></script>
+    <script src="/js/index.js?v=20"></script>
   </body>
 </html>
