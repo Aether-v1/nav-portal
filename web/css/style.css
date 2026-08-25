@@ -499,7 +499,7 @@ select {
 .link-title {
   width: 100%;
   margin: 4px 0 12px;
-  font-size: 24px;
+  font-size: clamp(15px, 2.2vw, 24px);
   font-weight: 800;
   line-height: 1.25;
   color: var(--text-main);
@@ -529,7 +529,7 @@ select {
   width: 100%;
   margin-top: 0;
   margin-bottom: 16px;
-  font-size: 30px;
+  font-size: clamp(17px, 2.6vw, 30px);
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: 0.2px;
@@ -798,12 +798,12 @@ select {
 
   .link-title {
     margin: 4px 0 10px;
-    font-size: 20px;
+    font-size: clamp(14px, 2.2vw, 20px);
   }
 
   .link-delay {
     margin-bottom: 12px;
-    font-size: 24px;
+    font-size: clamp(15px, 2.6vw, 24px);
   }
 
   .enter-button {

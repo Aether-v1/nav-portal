@@ -70,12 +70,14 @@ app.use('/logs', (req, res) => {
 });
 
 // ─── 静态资源 ─────────────────────────────────────────────────
+// CSS/JS 不设强缓存（maxAge: 0），每次请求由 ETag 条件验证：
+// 文件内容变化时自动拉取新版本，未变化返回 304，无需手动维护 ?v= 版本号
 app.use('/css', express.static(path.join(config.paths.webDir, 'css'), {
-  maxAge: '7d',
+  maxAge: 0,
   etag: true
 }));
 app.use('/js', express.static(path.join(config.paths.webDir, 'js'), {
-  maxAge: '7d',
+  maxAge: 0,
   etag: true
 }));
 app.use('/images', express.static(path.join(config.paths.webDir, 'images'), {
