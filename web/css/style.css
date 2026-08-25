@@ -328,7 +328,7 @@ select {
 
 .hero-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 14px;
   margin-top: 18px;
 }
@@ -345,6 +345,7 @@ select {
   border: 0;
   outline: none;
   cursor: pointer;
+  white-space: nowrap;
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
@@ -661,12 +662,6 @@ select {
   to { transform: rotate(360deg); }
 }
 
-@media (max-width: 1280px) {
-  .links-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 1080px) {
   .hero-notice-center {
     justify-content: flex-start;
@@ -791,7 +786,7 @@ select {
   }
 
   .links-grid {
-    grid-template-columns: 1fr;
+    /* 始终保持3列，不随屏幕缩小换行 */
     gap: 10px;
   }
 
