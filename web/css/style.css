@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --bg: #06101d;
   --bg-2: #09192b;
   --panel: rgba(9, 20, 36, 0.68);
@@ -977,5 +977,46 @@ select {
   }
   .jump-title {
     font-size: 20px;
+  }
+}
+
+/* ─── 下载面板 ─────────────────────────────────── */
+.panel-downloads {
+  padding: 22px;
+  margin-bottom: 20px;
+}
+
+.downloads-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.download-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 150px;
+  padding: 12px 18px;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.download-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.download-text {
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .download-button {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
   }
 }

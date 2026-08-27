@@ -244,6 +244,43 @@
     }
   }
 
+  // 渲染下载按钮
+  function renderDownloads(downloads) {
+    var panel = document.getElementById('downloadsPanel');
+    var wrap = document.getElementById('downloadsWrap');
+    if (!panel || !wrap || !downloads) return;
+
+    var platforms = [
+      { key: 'android', icon: '🤖' },
+      { key: 'windows', icon: '🪟' },
+      { key: 'mac', icon: '🍎' }
+    ];
+
+    var available = platforms.filter(function (p) {
+      return downloads[p.key] && downloads[p.key].url;
+    });
+
+    if (available.length === 0) {
+      panel.style.display = 'none';
+      return;
+    }
+
+    wrap.innerHTML = '';
+    available.forEach(function (p) {
+      var item = downloads[p.key];
+      var a = document.createElement('a');
+      a.className = 'sub-action-button download-button download-' + p.key;
+      a.href = item.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.innerHTML = '<span class="download-icon">' + p.icon + '</span>' +
+        '<span class="download-text">' + escapeHtml(item.text || p.key + ' 下载') + '</span>';
+      wrap.appendChild(a);
+    });
+
+    panel.style.display = '';
+  }
+
   async function loadConfig() {
     var ctrl = createAbortController();
     var response = await fetch('/api/config', {
@@ -333,6 +370,9 @@
           tgButton.style.display = 'none';
         }
       }
+
+      // 渲染下载按钮
+      renderDownloads(config.downloads);
 
       var refreshDelayButton = document.getElementById('refreshDelayButton');
       if (refreshDelayButton) {

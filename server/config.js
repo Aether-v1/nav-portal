@@ -135,6 +135,20 @@ function getPublicConfig(config) {
       text: config.site.tg.text
     },
     crispWebsiteId: config.site.crispWebsiteId,
+    downloads: {
+      android: {
+        url: config.site.downloads.android.url,
+        text: config.site.downloads.android.text
+      },
+      windows: {
+        url: config.site.downloads.windows.url,
+        text: config.site.downloads.windows.text
+      },
+      mac: {
+        url: config.site.downloads.mac.url,
+        text: config.site.downloads.mac.text
+      }
+    },
     links: config.site.links.map((link) => ({
       id: link.id,
       name: link.name,
