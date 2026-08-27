@@ -983,22 +983,26 @@ select {
 /* ─── 下载面板 ─────────────────────────────────── */
 .panel-downloads {
   padding: 22px;
-  margin-bottom: 20px;
 }
 
 .downloads-wrap {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
   justify-content: center;
-  margin-top: 4px;
+  align-items: center;
+  gap: 12px;
+  max-width: 480px;
+  margin: 4px auto 0;
 }
 
 .download-button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  min-width: 150px;
+  flex: 0 1 auto;
+  min-width: 140px;
+  max-width: 100%;
   padding: 12px 18px;
   text-decoration: none;
   font-size: 14px;
@@ -1007,16 +1011,20 @@ select {
 .download-icon {
   font-size: 18px;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .download-text {
   font-weight: 600;
+  white-space: nowrap;
 }
 
 @media (max-width: 480px) {
+  .downloads-wrap {
+    max-width: 100%;
+  }
   .download-button {
-    width: 100%;
+    flex: 1 1 140px;
     min-width: 0;
-    justify-content: center;
   }
 }
